@@ -1,0 +1,47 @@
+version: '3'
+services:
+    nginx-proxy:
+        image: jwilder/nginx-proxy
+        container_name: nginx-proxy
+        ports:
+          - "80:80"
+        volumes:
+          - /var/run/docker.sock:/tmp/docker.sock:ro
+          - ./nginx_proxy.conf:/etc/nginx/conf.d/nginx_proxy.conf:ro
+        depends_on:
+          - postgres_9.4
+        networks:
+          devbox:
+            ipv4_address: 172.19.0.10
+    moodle:
+        image: moodlehq/moodle-php-apache:7.1
+        volumes:
+          - moodledata:/var/www/moodledata
+          - $MOODLE_DOCKER_WWWROOT:/var/www/html
+        depends_on:
+          - postgres_9.4
+        environment:
+          - VIRTUAL_HOST=moodle.local
+        networks:
+          - devbox
+    postgres_9.4:
+        image: postgres:9.4
+        volumes:
+          - pgdata:/var/lib/postgresql/data
+        ports:
+          - "5432:5432"
+        networks:
+          devbox:
+            ipv4_address: 172.19.0.2
+volumes:
+    moodledata:
+        external: true
+    pgdata:
+        external: true
+networks:
+  devbox:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.19.0.0/16
