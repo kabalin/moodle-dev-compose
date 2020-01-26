@@ -33,8 +33,7 @@ moodledata
 Your Moodle config.php should contain at least:
 
 * Database host and credentials pointing to exising database container
-  (172.19.0.2 if you are using compose yml as is or you can use container name
-  as hostname).
+  (you can use container name as hostname).
 * `$CFG->dataroot  = '/var/www/moodledata';`
 * `$CFG->wwwroot   = 'http://moodle.local';`
 

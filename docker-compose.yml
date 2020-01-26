@@ -8,11 +8,8 @@ services:
         volumes:
           - /var/run/docker.sock:/tmp/docker.sock:ro
           - ./nginx_proxy.conf:/etc/nginx/conf.d/nginx_proxy.conf:ro
-        depends_on:
-          - postgres_9.4
         networks:
-          devbox:
-            ipv4_address: 172.19.0.10
+          - devbox
     moodle:
         image: moodlehq/moodle-php-apache:7.1
         volumes:
@@ -31,8 +28,7 @@ services:
         ports:
           - "5432:5432"
         networks:
-          devbox:
-            ipv4_address: 172.19.0.2
+          - devbox
 volumes:
     moodledata:
         external: true
