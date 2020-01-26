@@ -1,2 +1,2 @@
 .env
-docker-compose.local.yml
+*.local.yml
