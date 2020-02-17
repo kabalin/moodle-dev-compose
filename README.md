@@ -21,8 +21,8 @@ need to create volumes. Those volumes are then mounted to containers according
 to your compose file configuration. By default, you need at least two volumes:
 
 ```bash
-> docker volume create pgdata
-pgdata
+> docker volume create pgdata11
+pgdata11
 > docker volume create moodledata
 moodledata
 ```
@@ -84,14 +84,14 @@ You can see the status of containers using:
               Name                             Command               State           Ports
 ---------------------------------------------------------------------------------------------------
 moodle-dev-compose_moodle_1         docker-php-entrypoint apac ...   Up      80/tcp
-moodle-dev-compose_postgres_9.4_1   /docker-entrypoint.sh postgres   Up      0.0.0.0:5432->5432/tcp
+moodle-dev-compose_postgres_1       /docker-entrypoint.sh postgres   Up      0.0.0.0:5432->5432/tcp
 nginx-proxy                         /app/docker-entrypoint.sh  ...   Up      0.0.0.0:80->80/tcp
 ```
 
 Above command amond other things is showing ports mapping from local interface to containers.
 
 Notice that names of containers are resolved to their IPs on any container in
-the set, e.g. you may use `moodle-dev-compose_postgres_9.4_1` in your moodle
+the set, e.g. you may use `moodle-dev-compose_postgres_1` in your moodle
 `config.php` as DB hostname.
 
 You may stop the containers using `docker-compose stop` or destroy them using
@@ -101,7 +101,7 @@ containers.
 
 ### Database
 
-In this setup offical Postgres 9.4 docker image is used. The data is localted on
+In this setup offical Postgres 11 docker image is used. The data is localted on
 the volume, so recreating container will not cause data loss.
 
 On the first run, you will probably need to create database that you will use.
@@ -111,13 +111,13 @@ propagates this port to the host machine. Alternatively, you can access it by
 executing shell on running DB container and using `psql` client:
 
 ```bash
-> docker exec -it -u postgres moodle-dev-compose_postgres_9.4_1 bash
+> docker exec -it -u postgres moodle-dev-compose_postgres_1 bash
 postgres@6f001003d4c4:/$ createuser -DPRS moodlepg
 Enter password for new role:
 Enter it again:
 postgres@6f001003d4c4:/$ createdb -O moodlepg -E UTF-8 moodle-master-db
 postgres@6f001003d4c4:/$ psql
-psql (9.4.9)
+psql (11.5)
 Type "help" for help.
 
 postgres=# \l
@@ -135,6 +135,26 @@ postgres=# \l
 postgres=#
 
 ```
+
+#### Upgrading DB
+
+I suggest to use https://github.com/tianon/docker-postgres-upgrade image to
+perform major release upgrade. For 9.4 to 11 upgrade I createed a new volume
+called `pgdata11`, then stop database gracefully by logging in into container
+and executing:
+
+```
+docker exec -it -u postgres moodle-dev-compose_postgres_9.4_1 bash
+postgres@ea13edb262fb:/$ pg_ctl stop
+```
+
+Now, when service is gracefully stopped, execute:
+```
+docker run --rm -v pgdata:/var/lib/postgresql/9.4/data  -v pgdata11:/var/lib/postgresql/11/data tianon/postgres-upgrade:9.4-to-11
+```
+
+This will perform upgrade. Finally, shut down your dev suit, make necessary changes in
+compose files and start again (reflect volume changes as in [1f266d](https://github.com/kabalin/moodle-dev-compose/commit/1f266df29c4d6b0c33eddbc0faad4af47db9fa1f)).
 
 ### Accessing Moodle
 
@@ -173,7 +193,7 @@ services:
           - moodledata:/var/www/moodledata
           - $MOODLE_DOCKER_WWWROOT:/var/www/html
         depends_on:
-          - postgres_9.4
+          - postgres
         environment:
           - VIRTUAL_HOST=moodle73.local
         networks:
@@ -194,7 +214,7 @@ This will bring a new container into play:
 ---------------------------------------------------------------------------------------------------
 moodle-dev-compose_moodle_1         docker-php-entrypoint apac ...   Up      80/tcp
 moodle-dev-compose_moodle73_1       docker-php-entrypoint apac ...   Up      80/tcp
-moodle-dev-compose_postgres_9.4_1   /docker-entrypoint.sh postgres   Up      0.0.0.0:5432->5432/tcp
+moodle-dev-compose_postgres_1       /docker-entrypoint.sh postgres   Up      0.0.0.0:5432->5432/tcp
 nginx-proxy                         /app/docker-entrypoint.sh  ...   Up      0.0.0.0:80->80/tcp
 ```
 
@@ -220,15 +240,13 @@ services:
           - moodledata:/var/www/moodledata
           - $MOODLE_DOCKER_WWWROOT:/var/www/html
         depends_on:
-          - postgres_9.4
+          - postgres
         environment:
           - VIRTUAL_HOST=moodle73.local
         networks:
           - devbox
     memcached0:
         image: memcached:1.4.33
-        depends_on:
-          - postgres_9.4
         networks:
           - devbox
 ```
@@ -242,7 +260,7 @@ This will add another container:
 moodle-dev-compose_memcached0_1     docker-entrypoint.sh memcached   Up      11211/tcp
 moodle-dev-compose_moodle_1         docker-php-entrypoint apac ...   Up      80/tcp
 moodle-dev-compose_moodle73_1       docker-php-entrypoint apac ...   Up      80/tcp
-moodle-dev-compose_postgres_9.4_1   /docker-entrypoint.sh postgres   Up      0.0.0.0:5432->5432/tcp
+moodle-dev-compose_postgres_1       /docker-entrypoint.sh postgres   Up      0.0.0.0:5432->5432/tcp
 nginx-proxy                         /app/docker-entrypoint.sh  ...   Up      0.0.0.0:80->80/tcp
 ```
 
