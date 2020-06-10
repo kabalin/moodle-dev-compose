@@ -11,7 +11,7 @@ services:
         networks:
           - devbox
     moodle:
-        image: moodlehq/moodle-php-apache:7.1
+        image: moodlehq/moodle-php-apache:7.2
         volumes:
           - moodledata:/var/www/moodledata
           - $MOODLE_DOCKER_WWWROOT:/var/www/html
