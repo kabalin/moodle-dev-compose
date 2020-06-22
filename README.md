@@ -176,6 +176,35 @@ www-data@0c46f3f2037a:~/html$ php admin/cli/upgrade.php
 No upgrade needed for the installed version 3.7.2 (Build: 20190909) (2019052002). Thanks for coming anyway!
 ```
 
+### Profiling
+
+You can add Xhprof extenstion and use Moodle built-in profiling tool.
+
+```bash
+> docker exec -it moodle-dev-compose_moodle_1 bash
+root@62ba9a041e0f:/var/www/html#  pecl install xhprof
+WARNING: channel "pecl.php.net" has updated its protocols, use "pecl channel-update pecl.php.net" to update
+downloading xhprof-2.2.0.tgz ...
+...
+root@62ba9a041e0f:/var/www/html# docker-php-ext-enable xhprof
+root@62ba9a041e0f:/var/www/html# php -i | grep xhprof
+/usr/local/etc/php/conf.d/docker-php-ext-xhprof.ini,
+xhprof
+xhprof support => enabled
+xhprof.collect_additional_info => 0 => 0
+xhprof.output_dir => no value => no value
+xhprof.sampling_depth => 0x7fffffff => 0x7fffffff
+xhprof.sampling_interval => 100000 => 100000
+```
+Xhprof extension has been installed and enabled, restart the web container.
+
+```bash
+> docker restart moodle-dev-compose_moodle_1
+```
+
+A this point you can navigate to Site administration > Development >
+Profiling, enable it and trigger for the content you need to profile.
+
 ### More containers
 
 Suppose you need another container with a different php version, but for the
