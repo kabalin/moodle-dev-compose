@@ -91,7 +91,7 @@ nginx-proxy                         /app/docker-entrypoint.sh  ...   Up      0.0
 Above command amond other things is showing ports mapping from local interface to containers.
 
 Notice that names of containers are resolved to their IPs on any container in
-the set, e.g. you may use `moodle-dev-compose_postgres_1` in your moodle
+the set, e.g. you may use `postgres` in your moodle
 `config.php` as DB hostname.
 
 You may stop the containers using `docker-compose stop` or destroy them using
@@ -294,7 +294,7 @@ nginx-proxy                         /app/docker-entrypoint.sh  ...   Up      0.0
 ```
 
 In Moodle, navigate to cache configuration and create instance using
-`moodle-dev-compose_memcached0_1` as hostname and `11211` as port.
+`memcached0` as hostname and `11211` as port.
 
 Enjoy!
 
