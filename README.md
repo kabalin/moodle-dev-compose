@@ -27,15 +27,17 @@ pgdata11
 moodledata
 ```
 
-
 ### Moodle config.php
 
 Your Moodle config.php should contain at least:
 
-* Database host and credentials pointing to exising database container
-  (you can use container name as hostname).
+* Database name and credentials.
+* `$CFG->dbhost    = 'postgres';`
 * `$CFG->dataroot  = '/var/www/moodledata';`
 * `$CFG->wwwroot   = 'http://moodle.local';`
+
+You may add subdirectory to `dataroot` if you wish, e.g. for using different
+dir for different databases when you switch between Moodle versions.
 
 ### Hostname
 
@@ -54,14 +56,21 @@ hostname, you need a record in your `/etc/hosts` file pointing to localhost.
 
 ## Running environment
 
-
-First, define env variable with location to your Moodle code:
+Define env variable with location to your Moodle code:
 
 ```bash
 export MOODLE_DOCKER_WWWROOT=/home/ruslan/git/moodle
 ```
 
 This env var is used for Moodle codebase mount inside the web container.
+
+Define env variable with PHP version to be used:
+
+```bash
+export MOODLE_DOCKER_PHP_VERSION=7.4
+```
+
+This is used to select `moodlehq/moodle-php-apache` image version to use.
 
 To start the environment, use docker-compose command. You need to execute it
 from this repo directory:
@@ -90,9 +99,9 @@ nginx-proxy                         /app/docker-entrypoint.sh  ...   Up      0.0
 
 Above command amond other things is showing ports mapping from local interface to containers.
 
-Notice that names of containers are resolved to their IPs on any container in
-the set, e.g. you may use `postgres` in your moodle
-`config.php` as DB hostname.
+Notice that names of containers specified in compose file are resolved to
+their IPs on any container in the set, e.g. you may use `postgres` in your
+moodle `config.php` as DB hostname.
 
 You may stop the containers using `docker-compose stop` or destroy them using
 `docker-compose down`. It is safe to desroy as you are using volumes, so next
@@ -136,7 +145,7 @@ postgres=#
 
 ```
 
-#### Upgrading DB
+#### Upgrading DB to next major version
 
 I suggest to use https://github.com/tianon/docker-postgres-upgrade image to
 perform major release upgrade. For 9.4 to 11 upgrade I createed a new volume
@@ -176,9 +185,23 @@ www-data@0c46f3f2037a:~/html$ php admin/cli/upgrade.php
 No upgrade needed for the installed version 3.7.2 (Build: 20190909) (2019052002). Thanks for coming anyway!
 ```
 
+### Receiving mail
+
+We run Mailhog container by default that allows to receive email and provides
+interface to view it.
+
+In Moodle configuration file add:
+```
+$CFG->smtphosts = 'mailhog:1025'
+```
+
+Web interface to view emails is available at `http://moodle.local:8025`
+
+
+## Adding PHP extensions
 ### Profiling
 
-You can add Xhprof extenstion and use Moodle built-in profiling tool.
+You can add Xhprof extension and use Moodle built-in profiling tool.
 
 ```bash
 > docker exec -it moodle-dev-compose_moodle_1 bash
@@ -205,7 +228,10 @@ Xhprof extension has been installed and enabled, restart the web container.
 A this point you can navigate to Site administration > Development >
 Profiling, enable it and trigger for the content you need to profile.
 
-### More containers
+Notice, if you destroy container, you will need to repeat above steps on the
+new one.
+
+## More containers
 
 Suppose you need another container with a different php version, but for the
 same Moodle instance. You can easily add another container either directly to
@@ -216,15 +242,15 @@ Create a new file called docker-compose.local.yml containing:
 ```
 version: '3'
 services:
-    moodle73:
-        image: moodlehq/moodle-php-apache:7.3
+    moodle8:
+        image: moodlehq/moodle-php-apache:8
         volumes:
           - moodledata:/var/www/moodledata
           - $MOODLE_DOCKER_WWWROOT:/var/www/html
         depends_on:
           - postgres
         environment:
-          - VIRTUAL_HOST=moodle73.local
+          - VIRTUAL_HOST=moodle8.local
         networks:
           - devbox
 ```
@@ -242,60 +268,36 @@ This will bring a new container into play:
               Name                             Command               State           Ports
 ---------------------------------------------------------------------------------------------------
 moodle-dev-compose_moodle_1         docker-php-entrypoint apac ...   Up      80/tcp
-moodle-dev-compose_moodle73_1       docker-php-entrypoint apac ...   Up      80/tcp
+moodle-dev-compose_moodle8_1       docker-php-entrypoint apac ...   Up      80/tcp
 moodle-dev-compose_postgres_1       /docker-entrypoint.sh postgres   Up      0.0.0.0:5432->5432/tcp
 nginx-proxy                         /app/docker-entrypoint.sh  ...   Up      0.0.0.0:80->80/tcp
 ```
 
-Add the new host to your `/etc/hosts` and you can start using it on `http://moodle73.local`.
+Add the new host to your `/etc/hosts` and you can start using it on `http://moodle8.local`.
 
 ```
-127.0.0.1 moodle.local moodle73.local
+127.0.0.1 moodle.local moodle8.local
 ```
 
-### Even more contnainers
+## Other services
 
-With docker you can do anything you need. Try adding memcached to make your
-instance faster:
+Using docker you can add any service you need. Examples below assume you are
+adding configuration to `docker-compose.local.yml`.
 
-Your docker-compose.local.yml may look like:
+### Memcached
+
+Adding memcached will make your instance running faster.
+
+Your `docker-compose.local.yml` may look like:
 
 ```
 version: '3'
 services:
-    moodle73:
-        image: moodlehq/moodle-php-apache:7.3
-        volumes:
-          - moodledata:/var/www/moodledata
-          - $MOODLE_DOCKER_WWWROOT:/var/www/html
-        depends_on:
-          - postgres
-        environment:
-          - VIRTUAL_HOST=moodle73.local
-        networks:
-          - devbox
     memcached0:
         image: memcached:1.4.33
         networks:
           - devbox
 ```
 
-This will add another container:
-
-```bash
-> docker-compose -f docker-compose.yml -f docker-compose.local.yml ps
-              Name                             Command               State           Ports
----------------------------------------------------------------------------------------------------
-moodle-dev-compose_memcached0_1     docker-entrypoint.sh memcached   Up      11211/tcp
-moodle-dev-compose_moodle_1         docker-php-entrypoint apac ...   Up      80/tcp
-moodle-dev-compose_moodle73_1       docker-php-entrypoint apac ...   Up      80/tcp
-moodle-dev-compose_postgres_1       /docker-entrypoint.sh postgres   Up      0.0.0.0:5432->5432/tcp
-nginx-proxy                         /app/docker-entrypoint.sh  ...   Up      0.0.0.0:80->80/tcp
-```
-
 In Moodle, navigate to cache configuration and create instance using
 `memcached0` as hostname and `11211` as port.
-
-Enjoy!
-
-
