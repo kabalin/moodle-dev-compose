@@ -288,7 +288,7 @@ adding configuration to `docker-compose.local.yml`.
 
 Adding memcached will make your instance running faster.
 
-Your `docker-compose.local.yml` may look like:
+Your `docker-compose.local.yml` should contain:
 
 ```
 version: '3'
@@ -301,3 +301,79 @@ services:
 
 In Moodle, navigate to cache configuration and create instance using
 `memcached0` as hostname and `11211` as port.
+
+### SAML2
+
+In order to deploy SAML2 IdP, we will be using [kristophjunge/docker-test-saml-idp](https://github.com/kristophjunge/docker-test-saml-idp) docker image.
+
+You need [auth_saml2](https://github.com/catalyst/moodle-auth_saml2) plugin to be installed in Moodle, it will act as SAML2 service provider (SP).
+
+Your `docker-compose.local.yml` should contain:
+
+```
+version: '3'
+services:
+    samlidp:
+        image: kristophjunge/test-saml-idp
+        environment:
+          VIRTUAL_HOST: samlidp.local
+          SIMPLESAMLPHP_SP_ENTITY_ID: http://moodle.local/auth/saml2/sp/metadata.php
+          SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE: http://moodle.local/auth/saml2/sp/saml2-acs.php/moodle.local
+          SIMPLESAMLPHP_SP_SINGLE_LOGOUT_SERVICE: http://moodle.local/auth/saml2/sp/saml2-logout.php/moodle.local
+          SIMPLESAMLPHP_ADMIN_PASSWORD: admin1
+          SIMPLESAMLPHP_SECRET_SALT: salt
+        ports:
+        - "8080:8080"
+        - "8443:8443"
+        volumes:
+        - ./authsources.php:/var/www/simplesamlphp/config/authsources.php
+        networks:
+          devbox:
+            aliases:
+              - samlidp.local
+```
+
+Those `SIMPLESAMLPHP_SP_*` values can be identified from SP metadata output (`http://moodle.local/auth/saml2/sp/metadata.php`).
+
+You also need `authsources.php` containing user accounts, which is mounted
+in container, use example below as starting point:
+
+```
+<?php
+
+$config = [
+
+    'admin' => [
+        'core:AdminPassword',
+    ],
+
+    'example-userpass' => [
+        'exampleauth:UserPass',
+        'samlu1:samlu1pass' => [
+            'uid' => ['samlu1'],
+            'eduPersonAffiliation' => ['group1'],
+            'email' => 'samluser1@example.com',
+            'firstName' => 'Saml',
+            'lastName' => 'User 1',
+            'customOrg' => 'Company 1',
+        ],
+        'samlu2:samlu2pass' => [
+            'uid' => ['samlu2'],
+            'eduPersonAffiliation' => ['group2'],
+            'email' => 'samluser2@example.com',
+            'firstName' => 'Saml',
+            'lastName' => 'User 2',
+            'customOrg' => 'Company 2',
+        ],
+    ],
+];
+```
+
+When you start containers, navigate to
+`http://samlidp.local:8080/simplesaml/module.php/core/frontpage_federation.php`,
+you will find metadata link you can use in `auth_saml2` `idpmetadata` setting to
+complete setup (or you can use metadata XML that you can retrieve on the same
+page).
+
+Once configured (you need to add field mapping as well), you should be
+able to login to Moodle using one of accounts defined in `authsources.php`.
