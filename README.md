@@ -264,6 +264,42 @@ Add the new host to your `/etc/hosts` and you can start using it on `http://mood
 127.0.0.1 moodle.local moodle8.local
 ```
 
+## Using SSL
+
+If you need access by `https`, create self-signed certificates named
+`localhost`:
+
+```
+$ mkdir certs
+$ openssl req -x509 -nodes -newkey rsa:2048 -keyout certs/localhost.key -out certs/localhost.crt
+```
+
+Then use them as part of nginx-proxy configuration:
+
+```
+diff --git a/docker-compose.yml b/docker-compose.yml
+index 0bc7fb0..934cc58 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -5,9 +5,11 @@ services:
+         container_name: nginx-proxy
+         ports:
+           - "80:80"
++          - "443:443"
+         volumes:
+           - /var/run/docker.sock:/tmp/docker.sock:ro
+           - ./nginx_proxy.conf:/etc/nginx/conf.d/nginx_proxy.conf:ro
++          - ./certs:/etc/nginx/certs
+         networks:
+           - devbox
+     moodle:
+```
+
+Also in Moodle config make sure `wwwroot` reflects correct protocol:
+```
+$CFG->wwwroot   = 'https://moodle.local';
+```
+
 ## Other services
 
 Using docker you can add any service you need. Examples below assume you are
