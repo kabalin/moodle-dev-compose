@@ -14,19 +14,6 @@ You will need:
 * Make sure you don't run local postgres server that is using port 5432 (if
   you need, change it to different port or use different port in compose file)
 
-### Volumes
-
-For data persitense (so that you won't lose your Moodle data or databases) you
-need to create volumes. Those volumes are then mounted to containers according
-to your compose file configuration. By default, you need at least two volumes:
-
-```bash
-> docker volume create pgdata11
-pgdata11
-> docker volume create moodledata
-moodledata
-```
-
 ### Moodle config.php
 
 Your Moodle config.php should contain at least:
@@ -110,7 +97,7 @@ containers.
 
 ### Database
 
-In this setup offical Postgres 11 docker image is used. The data is localted on
+In this setup offical Postgres 12 docker image is used. The data is located on
 the volume, so recreating container will not cause data loss.
 
 On the first run, you will probably need to create database that you will use.
@@ -126,8 +113,6 @@ Enter password for new role:
 Enter it again:
 postgres@6f001003d4c4:/$ createdb -O moodlepg -E UTF-8 moodle-master-db
 postgres@6f001003d4c4:/$ psql
-psql (11.5)
-Type "help" for help.
 
 postgres=# \l
                                          List of databases
@@ -145,25 +130,25 @@ postgres=#
 
 ```
 
-#### Upgrading DB to next major version
+#### Upgrading Postgres to next major version
 
 I suggest to use https://github.com/tianon/docker-postgres-upgrade image to
-perform major release upgrade. For 9.4 to 11 upgrade I createed a new volume
-called `pgdata11`, then stop database gracefully by logging in into container
+perform major release upgrade. For 11 to 12 upgrade I createed a new volume
+called `pgdata12`, then stop database gracefully by logging in into container
 and executing:
 
 ```
-docker exec -it -u postgres moodle-dev-compose_postgres_9.4_1 bash
+docker exec -it -u postgres moodle-dev-compose_postgres_1 bash
 postgres@ea13edb262fb:/$ pg_ctl stop
 ```
 
 Now, when service is gracefully stopped, execute:
 ```
-docker run --rm -v pgdata:/var/lib/postgresql/9.4/data  -v pgdata11:/var/lib/postgresql/11/data tianon/postgres-upgrade:9.4-to-11
+docker run --rm -v pgdata11:/var/lib/postgresql/11/data -v pgdata12:/var/lib/postgresql/12/data tianon/postgres-upgrade:11-to-12
 ```
 
 This will perform upgrade. Finally, shut down your dev suit, make necessary changes in
-compose files and start again (reflect volume changes as in [1f266d](https://github.com/kabalin/moodle-dev-compose/commit/1f266df29c4d6b0c33eddbc0faad4af47db9fa1f)).
+compose files and start again.
 
 ### Accessing Moodle
 
