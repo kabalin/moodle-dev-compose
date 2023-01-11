@@ -392,9 +392,14 @@ $config = [
 
 When you start containers, navigate to
 `http://samlidp.local:8080/simplesaml/module.php/core/frontpage_federation.php`,
-you will find metadata link you can use in `auth_saml2` `idpmetadata` setting to
-complete setup (or you can use metadata XML that you can retrieve on the same
-page).
+you will find metadata link you can use in `auth_saml2` `idpmetadata` setting
+to complete setup (or you can use metadata XML that you can retrieve on the
+same page). If you get `Invalid metadata at
+http://samlidp.local:8080/simplesaml/saml2/idp/metadata.php` error, most
+likely CURL security settings do not permit URL access, check
+`curlsecurityblockedhosts` and `curlsecurityallowedport` config settings in
+Moodle.
 
-Once configured (you need to add field mapping as well), you should be
+Once configured (you need to add field mapping as well, for example snippet
+above you may need to map `firstName`, `lastName` and `email`), you should be
 able to login to Moodle using one of accounts defined in `authsources.php`.
