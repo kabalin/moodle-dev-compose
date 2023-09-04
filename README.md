@@ -97,7 +97,7 @@ containers.
 
 ### Database
 
-In this setup offical Postgres 12 docker image is used. The data is located on
+In this setup offical Postgres 13 docker image is used. The data is located on
 the volume, so recreating container will not cause data loss.
 
 On the first run, you will probably need to create database that you will use.
@@ -172,12 +172,12 @@ No upgrade needed for the installed version 3.7.2 (Build: 20190909) (2019052002)
 
 ### Receiving mail
 
-We run Mailhog container by default that allows to receive email and provides
+We run Mailpit container by default that allows to receive email and provides
 interface to view it.
 
 In Moodle configuration file add:
 ```
-$CFG->smtphosts = 'mailhog:1025'
+$CFG->smtphosts = 'mail:1025'
 ```
 
 Web interface to view emails is available at `http://moodle.local:8025`

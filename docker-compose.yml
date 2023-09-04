@@ -22,17 +22,17 @@ services:
         networks:
           - devbox
     postgres:
-        image: postgres:12
+        image: postgres:13
         environment:
           - POSTGRES_PASSWORD=postgres
         volumes:
-          - pgdata12:/var/lib/postgresql/data
+          - pgdata13:/var/lib/postgresql/data
         ports:
           - "5432:5432"
         networks:
           - devbox
-    mailhog:
-        image: mailhog/mailhog
+    mail:
+        image: axllent/mailpit:latest
         ports:
           - 8025:8025
         networks:
@@ -40,7 +40,7 @@ services:
 volumes:
     moodledata:
         external: true
-    pgdata12:
+    pgdata13:
         external: true
 networks:
   devbox:
