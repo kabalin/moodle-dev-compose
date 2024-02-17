@@ -1,0 +1,28 @@
+services:
+    mariadb:
+        image: mariadb:10.6
+        environment:
+          - MYSQL_ROOT_PASSWORD=root
+          - MYSQL_USER=moodle
+          - MYSQL_PASSWORD=moodle
+        volumes:
+          - mysqldata:/var/lib/mysql
+        ports:
+          - 5432:5432
+        networks:
+          - devbox
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        environment:
+          - PMA_HOST=mariadb
+          - PMA_VERBOSE=mariadb
+          - UPLOAD_LIMIT=256M
+        depends_on:
+          - mariadb
+        ports:
+          - 8081:80
+        networks:
+          - devbox
+volumes:
+    mysqldata:
+        external: true
