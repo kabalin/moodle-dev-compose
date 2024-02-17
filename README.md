@@ -115,14 +115,38 @@ You may stop the containers using `docker compose stop` or destroy them using
 time you start them, all data will be in place within newly created
 containers.
 
+### Accessing Moodle
+
+Now when you have database created and config.php configured, you may enter
+`http://moodle.local` in your browser on host machine. This will point to your
+localhost according to `/etc/hosts` record we created, which will then be
+handled by `nginx-proxy` container (notice the port mapping mentioned above).
+`nginx-proxy` will recognise hostname `moodle.local` and redirect request to
+`moodle-dev-compose-moodle-1` container that will show you Moodle setup screen
+in the browser.
+
+If you need `php` command line (e.g. for setting up Moodle or cron run), you
+may access it from web container:
+
+```bash
+> docker exec -it -u www-data moodle-dev-compose-moodle-1 bash
+www-data@0c46f3f2037a:~/html$
+www-data@1d18bc646bf4:~/html$ php admin/cli/upgrade.php
+No upgrade needed for the installed version 4.4dev (Build: 20240215) (2024021500). Thanks for coming anyway!
+```
+
 ### Database
 
-In this setup MariaDB docker image is used. The data is located on
+#### MariaDB
+
+By default MariaDB docker image is used. The data is located on
 the volume, so recreating container will not cause data loss.
 
 On the first run, you will probably need to create database that you will use.
-You can do that using phpmyadmin included in compose file, and accessible at
-`http://moodle.local:8081`
+You can do that using phpmyadmin included in compose service file, and accessible at
+`http://moodle.local:8081` (use user `root` and password `root` for admin
+access). User `moodle` with password `moodle` is pre-created (we use it in
+moodle config.php).
 
 Accessing server using DB client is also possible on `localhost:3306`, as container
 propagates this port to the host machine. Alternatively, you can access it by
@@ -143,25 +167,78 @@ Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 MariaDB [(none)]>
 ```
 
-### Accessing Moodle
+#### Postgres
 
-Now when you have database created and config.php configured, you may enter
-`http://moodle.local` in your browser on host machine. This will point to your
-localhost according to `/etc/hosts` record we created, which will then be
-handled by `nginx-proxy` container (notice the port mapping mentioned above).
-`nginx-proxy` will recognise hostname `moodle.local` and redirect request to
-`moodle-dev-compose-moodle-1` container that will show you Moodle setup screen
-in the browser.
+If you prefer Postgres, modify `include` section at the top of `compose.yaml`.
 
-If you need `php` command line (e.g. for setting up Moodle or cron run), you
-may access it from web container:
+```
+include:
+#  - mariadb.service.yaml
+  - postgres.service.yaml
+```
+
+For postgres service offical Postgres 13 docker image is used. The data is located on
+the volume, so recreating container will not cause data loss.
+
+On the first run, you will probably need to create database and user that you will use.
+You can do that using adminer included in compose service file, and accessible at
+`http://moodle.local:8082` (use user `postgres` and password `postgres` for
+admin access).
+
+Accessing server using DB client is possible on `localhost:5432`, as container
+propagates this port to the host machine. Alternatively, you can access it by
+executing shell on running DB container and using `psql` client:
 
 ```bash
-> docker exec -it -u www-data moodle-dev-compose-moodle-1 bash
-www-data@0c46f3f2037a:~/html$
-www-data@1d18bc646bf4:~/html$ php admin/cli/upgrade.php
-No upgrade needed for the installed version 4.4dev (Build: 20240215) (2024021500). Thanks for coming anyway!
+> docker exec -it -u postgres moodle-dev-compose-postgres-1 bash
+postgres@6f001003d4c4:/$ createuser -DPRS moodle
+Enter password for new role:
+Enter it again:
+postgres@6f001003d4c4:/$ createdb -O moodle -E UTF-8 moodle-main
+postgres@6f001003d4c4:/$ psql
+
+postgres=# \l
+                                         List of databases
+           Name            |  Owner   | Encoding |  Collate   |   Ctype    |   Access privileges
+---------------------------+----------+----------+------------+------------+-----------------------
+ moodle-main               | moodlepg | UTF8     | en_US.utf8 | en_US.utf8 |
+ postgres                  | postgres | UTF8     | en_US.utf8 | en_US.utf8 |
+ template0                 | postgres | UTF8     | en_US.utf8 | en_US.utf8 | =c/postgres          +
+                           |          |          |            |            | postgres=CTc/postgres
+ template1                 | postgres | UTF8     | en_US.utf8 | en_US.utf8 | =c/postgres          +
+                           |          |          |            |            | postgres=CTc/postgres
+(4 rows)
+
+postgres=#
+
 ```
+
+Moodle `config.php` would need changes:
+```
+$CFG->dbtype    = 'pgsql';
+$CFG->dbhost    = 'postgres';
+```
+
+##### Upgrading Postgres to next major version
+
+I suggest to use https://github.com/tianon/docker-postgres-upgrade image to
+perform major release upgrade. For 12 to 13 upgrade I createed a new volume
+called `pgdata13`, then stop database gracefully by logging in into container
+and executing:
+
+```
+docker exec -it -u postgres moodle-dev-compose-postgres-1 bash
+postgres@ea13edb262fb:/$ pg_ctl stop
+```
+
+Now, when service is gracefully stopped, execute:
+```
+docker run --rm -v pgdata12:/var/lib/postgresql/12/data -v pgdata13:/var/lib/postgresql/13/data tianon/postgres-upgrade:12-to-13
+```
+
+This will perform upgrade. Finally, shut down your dev suit, make necessary changes in
+compose files and start again.
+
 
 ### Receiving mail
 
@@ -232,10 +309,12 @@ services:
           - devbox
 ```
 
-Now, stop the existing containers and modify `compose.yaml`, add [`include`](https://docs.docker.com/compose/multiple-compose-files/include/) section in top of file:
+Now, stop the existing containers and modify `compose.yaml`, to [`include`](https://docs.docker.com/compose/multiple-compose-files/include/) `compose.local.yaml`:
 
 ```
 include:
+  - mariadb.service.yaml
+#  - postgres.service.yaml
   - compose.local.yaml
 ```
 

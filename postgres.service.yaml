@@ -1,0 +1,23 @@
+services:
+    postgres:
+        image: postgres:13
+        environment:
+          - POSTGRES_PASSWORD=postgres
+        volumes:
+          - pgdata13:/var/lib/postgresql/data
+        ports:
+          - 5432:5432
+        networks:
+          - devbox
+    adminer:
+        image: adminer
+        environment:
+          - ADMINER_DESIGN=nette
+          - ADMINER_DEFAULT_SERVER=postgres
+        ports:
+          - 8082:8080
+        networks:
+          - devbox
+volumes:
+    pgdata13:
+        external: true
