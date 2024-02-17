@@ -7,7 +7,7 @@ Compose file for Docker based local Moodle dev environment.
 
 You will need:
 
-* Docker and Docker-compose installed.
+* [Docker](https://docs.docker.com/get-docker/). If you don't need GUI, installing only [Docker engine](https://docs.docker.com/engine/install/) is sufficient, but you need [Docker Compose](https://docs.docker.com/compose/install/) installed separately.
 * Clone of Moodle repo that you want to work on.
 * Make sure you don't run local webserver that is using port 80 (if you need,
   change it to different port or use different port in compose file).
@@ -84,7 +84,7 @@ export MOODLE_DOCKER_PHP_VERSION=8.1
 
 This is used to select `moodlehq/moodle-php-apache` image version to use.
 
-To start the environment, use docker-compose command. You need to execute it
+To start the environment, use `docker compose` command. You need to execute it
 from this repo directory:
 
 ```bash
@@ -218,7 +218,6 @@ existing compose file, or by using a seaparate file:
 Create a new file called `compose.local.yaml` containing:
 
 ```
-version: '3'
 services:
     moodle83:
         image: moodlehq/moodle-php-apache:8.3
@@ -245,7 +244,7 @@ This will bring a new container into play on the next `docker compose up` run.
 Note: if you prefer not to use `include` section in `compose.yaml`, alternative way to use many config
 files is:
 ```bash
-> docker-compose -f compose.yaml -f compose.local.yaml up
+> docker compose -f compose.yaml -f compose.local.yaml up
 ```
 
 Add the new host to your `/etc/hosts` and you can start using it on `http://moodle83.local`.
@@ -302,7 +301,6 @@ Adding memcached will make your instance running faster.
 Your `compose.local.yaml` should contain:
 
 ```
-version: '3'
 services:
     memcached0:
         image: memcached:1.4.33
@@ -322,7 +320,6 @@ You need [auth_saml2](https://github.com/catalyst/moodle-auth_saml2) plugin to b
 Your `compose.local.yaml` should contain:
 
 ```
-version: '3'
 services:
     samlidp:
         image: kristophjunge/test-saml-idp
