@@ -363,6 +363,17 @@ index 0bc7fb0..934cc58 100644
      moodle:
 ```
 
+and in the service that you need to make accesible over `https`, add `CERT_NAME` env var:
+
+```
+           - mariadb
+         environment:
+           - VIRTUAL_HOST=moodle.local
++          - CERT_NAME=localhost
+         networks:
+           - devbox
+```
+
 Also in Moodle config make sure `wwwroot` reflects correct protocol:
 ```
 $CFG->wwwroot   = 'https://moodle.local';
