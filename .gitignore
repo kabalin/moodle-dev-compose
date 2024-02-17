@@ -1,2 +1,4 @@
 .env
-*.local.yml
+*local.yaml
+certs/
+saml2/
