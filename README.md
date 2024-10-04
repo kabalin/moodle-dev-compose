@@ -1,7 +1,16 @@
 moodle-dev-compose
 ------------------
 
-Compose file for Docker based local Moodle dev environment.
+This project is an alternative way to setup Moodle dev environment using Docker. It is close to LAMP approach from configuring perspective - there is only one database server for all instances of Moodle, and instead of several Apache VirtualHost sites, separate webserver container is used for each Moodle instance. This results in having clean host system (no direct installation of service packages) and provides flexibility to mix versions of PHP for different Moodle instances, as well as easily add other services, such as Memcached or SAML.
+
+This setup can co-exist on the same host with [moodle-docker](https://github.com/moodlehq/moodle-docker), which is strongly advised to use for running tests.
+
+## Features
+* Different virtual hostnames (or virtual paths) for each instance of Moodle.
+* Uses `moodlehq/moodle-php-apache` Moodle HQ maintained images.
+* Shared DB server for all Moodle instances.
+* Mail server container with web UI.
+* Easy to extend, enable SSL, add other any other services (see [examples](#other-services)).
 
 ## Requirements
 
