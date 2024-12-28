@@ -8,7 +8,7 @@ This setup can co-exist on the same host with [moodle-docker](https://github.com
 ## Features
 * Different virtual hostnames (or virtual paths) for each instance of Moodle.
 * Uses `moodlehq/moodle-php-apache` Moodle HQ maintained images.
-* Shared DB server for all Moodle instances.
+* Shared DB server for all Moodle instances with Phpmyadmin (or Adminer) web UI.
 * Mail server container with web UI.
 * Easy to extend, enable SSL, add other any other services (see [examples](#other-services)).
 
@@ -251,7 +251,7 @@ compose files and start again.
 
 ### Receiving mail
 
-We run Mailpit container by default that allows to receive email and provides
+We start Mailpit container by default that allows to receive email and provides
 interface to view it.
 
 In Moodle configuration file add:
@@ -386,6 +386,7 @@ and in the service that you need to make accesible over `https`, add `CERT_NAME`
 Also in Moodle config make sure `wwwroot` reflects correct protocol:
 ```
 $CFG->wwwroot   = 'https://moodle.local';
+$CFG->sslproxy  = true;
 ```
 
 ## Other services
