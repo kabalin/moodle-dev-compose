@@ -20,4 +20,4 @@ services:
           - devbox
 volumes:
     pgdata13:
-        external: true
+        name: "pgdata13"

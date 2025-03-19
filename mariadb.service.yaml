@@ -25,4 +25,4 @@ services:
           - devbox
 volumes:
     mysqldata:
-        external: true
+        name: "mysqldata"

@@ -32,7 +32,8 @@ services:
           - devbox
 volumes:
     moodledata:
-        external: true
+        name: "moodledata"
+
 networks:
   devbox:
     driver: bridge
